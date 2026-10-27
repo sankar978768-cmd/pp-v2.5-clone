@@ -1,6 +1,7 @@
 import React from 'react';
-import { BirdId, Jama, PakshaType, DayOfWeek } from '../types';
+import { BirdId, Jama, PakshaType, DayOfWeek, DayCalculationMeta } from '../types';
 import { BIRD_EMOJIS } from '../components/BirdSelectModal';
+import { PANCHA_PAKSHI_DAYS } from '../data/panchaPakshiRegistry';
 import { JamaCard } from '../components/JamaCard';
 import { useLanguage } from '../context/LanguageContext';
 import { getTamilDateInfo } from '../utils/tamilCalendar';
@@ -13,6 +14,10 @@ import {
   Sparkles,
   ShieldAlert,
   Flame,
+  Sun,
+  Moon,
+  Crown,
+  AlertTriangle,
 } from 'lucide-react';
 
 export interface JamasScreenProps {
@@ -30,6 +35,8 @@ export interface JamasScreenProps {
   onToggleExpandAll: () => void;
   onNavigateToTab: (tab: 'bird' | 'location' | 'calendar') => void;
   selectedCalendarDate?: Date | null;
+  dayMeta?: DayCalculationMeta;
+  onSelectBird?: (birdId: BirdId) => void;
 }
 
 export const JamasScreen: React.FC<JamasScreenProps> = ({
@@ -47,12 +54,31 @@ export const JamasScreen: React.FC<JamasScreenProps> = ({
   onToggleExpandAll,
   onNavigateToTab,
   selectedCalendarDate,
+  dayMeta,
+  onSelectBird,
 }) => {
   const { language, t, getBirdName, getPakshaName, getDayName } = useLanguage();
   const currentBirdDisplayName = getBirdName(selectedBird);
 
   const activeDate = selectedCalendarDate || new Date();
   const activeTamilInfo = getTamilDateInfo(activeDate);
+
+  // Derive Canonical Astrological Rulers for today's Paksha & Day
+  const activeDayId = `${selectedPaksha}_${selectedDay}`;
+  const currentDayMeta =
+    dayMeta ||
+    PANCHA_PAKSHI_DAYS.find((d) => d.id === activeDayId) ||
+    PANCHA_PAKSHI_DAYS[0];
+
+  const dayRulerBird = currentDayMeta?.dayRulingBird;
+  const nightRulerBird = currentDayMeta?.nightRulingBird;
+  const dyingBird =
+    currentDayMeta?.dyingBird ||
+    currentDayMeta?.dayDyingBird ||
+    currentDayMeta?.nightDyingBird;
+
+  const isDayRulerRunning = runningJamaNumber >= 1 && runningJamaNumber <= 5;
+  const isNightRulerRunning = runningJamaNumber >= 6 && runningJamaNumber <= 10;
 
   return (
     <div className="space-y-4 animate-fadeIn">
@@ -91,102 +117,318 @@ export const JamasScreen: React.FC<JamasScreenProps> = ({
         </div>
       )}
 
-      {/* 2. Jamas Screen Top Status & Controls Strip */}
+      {/* 2. Jamas Screen Top Status & Astrological Rulers Strip */}
       <section
-        aria-label="10 Jama Calculation Controls"
-        className="bg-white dark:bg-slate-900/90 p-3.5 sm:p-5 rounded-2xl border border-[#E8DFCE] dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+        aria-label="10 Jama Calculation Controls and Astrological Rulers"
+        className="bg-white dark:bg-slate-900/90 p-3.5 sm:p-5 rounded-2xl border border-[#E8DFCE] dark:border-slate-800 shadow-xs space-y-4"
       >
-        {/* Active Bird, Paksha, Day, and Location summary */}
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => onNavigateToTab('bird')}
-            className="w-12 h-12 rounded-2xl bg-[#1B4332] text-white flex items-center justify-center text-2xl shadow-xs shrink-0 cursor-pointer hover:scale-105 active:scale-95 transition-all select-none"
-            title={language === 'ta' ? 'பட்சி மாற்ற கிளிக் செய்க' : 'Click to view bird profile'}
-          >
-            {BIRD_EMOJIS[selectedBird] || '🦅'}
-          </button>
+        {/* Top Row: Active Bird, Paksha, Day, Location + Expand/Collapse Buttons */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => onNavigateToTab('bird')}
+              className="w-12 h-12 rounded-2xl bg-[#1B4332] text-white flex items-center justify-center text-2xl shadow-xs shrink-0 cursor-pointer hover:scale-105 active:scale-95 transition-all select-none"
+              title={language === 'ta' ? 'பட்சி மாற்ற கிளிக் செய்க' : 'Click to view bird profile'}
+            >
+              {BIRD_EMOJIS[selectedBird] || '🦅'}
+            </button>
 
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
-                {currentBirdDisplayName}
-              </h1>
-              <span className="text-[11px] font-bold text-amber-800 dark:text-amber-400 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>
-                  {language === 'ta'
-                    ? `சாமம் ${runningJamaNumber} நடப்பில்`
-                    : `Jama ${runningJamaNumber} Running`}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
+                  {currentBirdDisplayName}
+                </h1>
+                <span className="text-[11px] font-bold text-amber-800 dark:text-amber-400 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>
+                    {language === 'ta'
+                      ? `சாமம் ${runningJamaNumber} நடப்பில்`
+                      : `Jama ${runningJamaNumber} Running`}
+                  </span>
                 </span>
-              </span>
-              {timeDisplayMode === 'ist' && (
-                <span className="text-[10px] text-emerald-800 dark:text-emerald-300 font-bold bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                  🇮🇳 IST (+05:30)
-                </span>
+                {timeDisplayMode === 'ist' && (
+                  <span className="text-[10px] text-emerald-800 dark:text-emerald-300 font-bold bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                    🇮🇳 IST (+05:30)
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
+                <button
+                  type="button"
+                  onClick={() => onNavigateToTab('calendar')}
+                  className="flex items-center gap-1 hover:text-[#1B4332] dark:hover:text-emerald-400 transition-colors cursor-pointer"
+                >
+                  <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    {activeTamilInfo.tamilMonthNameTa} {activeTamilInfo.tamilDate} ·
+                  </span>
+                  <span>{getPakshaName(selectedPaksha).split(' ')[0]} · {getDayName(selectedDay)}</span>
+                </button>
+                <span>•</span>
+                <button
+                  type="button"
+                  onClick={() => onNavigateToTab('location')}
+                  className="flex items-center gap-1 hover:text-sky-600 dark:hover:text-sky-400 transition-colors cursor-pointer"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
+                  <span className="truncate max-w-[120px]">{locationName || (language === 'ta' ? 'சென்னை' : 'Chennai')}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Expand/Contract Action Buttons */}
+          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+            <button
+              type="button"
+              onClick={onExpandRunningOnly}
+              id="expand-running-jama-only-btn"
+              className={`min-h-[42px] text-xs px-3 py-1.5 rounded-xl border transition-all cursor-pointer font-bold flex items-center gap-1.5 ${
+                expandedJamas.length === 1 && expandedJamas[0] === runningJamaNumber
+                  ? 'bg-amber-500/20 border-amber-500/50 text-amber-900 dark:text-amber-300'
+                  : 'bg-[#FAF6EE] dark:bg-slate-800 border-[#E8DFCE] dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+              }`}
+              title={t('runningJamaExpandedOnly')}
+            >
+              <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span>{t('runningOnlyBtn')}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onToggleExpandAll}
+              id="toggle-expand-all-jamas-btn"
+              className="min-h-[42px] text-xs px-3 py-1.5 rounded-xl border border-[#E8DFCE] dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              {expandedJamas.length === 10 ? (
+                <>
+                  <ChevronUp className="w-3.5 h-3.5 text-slate-500" />
+                  <span>{language === 'ta' ? 'அனைத்தையும் சுருக்கு' : 'Collapse All'}</span>
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                  <span>{language === 'ta' ? '10 சாமங்களையும் விரி' : 'Expand All 10'}</span>
+                </>
               )}
-            </div>
-
-            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
-              <button
-                type="button"
-                onClick={() => onNavigateToTab('calendar')}
-                className="flex items-center gap-1 hover:text-[#1B4332] dark:hover:text-emerald-400 transition-colors cursor-pointer"
-              >
-                <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-                <span className="font-semibold text-slate-800 dark:text-slate-200">
-                  {activeTamilInfo.tamilMonthNameTa} {activeTamilInfo.tamilDate} ·
-                </span>
-                <span>{getPakshaName(selectedPaksha).split(' ')[0]} · {getDayName(selectedDay)}</span>
-              </button>
-              <span>•</span>
-              <button
-                type="button"
-                onClick={() => onNavigateToTab('location')}
-                className="flex items-center gap-1 hover:text-sky-600 dark:hover:text-sky-400 transition-colors cursor-pointer"
-              >
-                <MapPin className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
-                <span className="truncate max-w-[120px]">{locationName || (language === 'ta' ? 'சென்னை' : 'Chennai')}</span>
-              </button>
-            </div>
+            </button>
           </div>
         </div>
 
-        {/* Expand/Contract Action Buttons */}
-        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
-          <button
-            type="button"
-            onClick={onExpandRunningOnly}
-            id="expand-running-jama-only-btn"
-            className={`min-h-[42px] text-xs px-3 py-1.5 rounded-xl border transition-all cursor-pointer font-bold flex items-center gap-1.5 ${
-              expandedJamas.length === 1 && expandedJamas[0] === runningJamaNumber
-                ? 'bg-amber-500/20 border-amber-500/50 text-amber-900 dark:text-amber-300'
-                : 'bg-[#FAF6EE] dark:bg-slate-800 border-[#E8DFCE] dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-            }`}
-            title={t('runningJamaExpandedOnly')}
-          >
-            <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-            <span>{t('runningOnlyBtn')}</span>
-          </button>
+        {/* Dedicated Astrological Rulers Top Bar (Day Ruler, Night Ruler, Dying Bird) */}
+        <div
+          id="jamas-screen-astrological-rulers"
+          className="pt-3 border-t border-[#E8DFCE]/80 dark:border-slate-800/80"
+        >
+          <div className="flex items-center justify-between gap-2 mb-2.5">
+            <div className="flex items-center gap-1.5 text-xs font-black text-slate-800 dark:text-slate-200">
+              <Crown className="w-3.5 h-3.5 text-amber-500" />
+              <span>
+                {language === 'ta'
+                  ? 'இன்றைய ஆளும் & சாவுப் பட்சிகள்'
+                  : "Today's Ruling & Dying Birds"}
+              </span>
+            </div>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+              {getPakshaName(selectedPaksha).split(' ')[0]} · {getDayName(selectedDay)}
+            </span>
+          </div>
 
-          <button
-            type="button"
-            onClick={onToggleExpandAll}
-            id="toggle-expand-all-jamas-btn"
-            className="min-h-[42px] text-xs px-3 py-1.5 rounded-xl border border-[#E8DFCE] dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-          >
-            {expandedJamas.length === 10 ? (
-              <>
-                <ChevronUp className="w-3.5 h-3.5 text-slate-500" />
-                <span>{language === 'ta' ? 'அனைத்தையும் சுருக்கு' : 'Collapse All'}</span>
-              </>
-            ) : (
-              <>
-                <ChevronDown className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                <span>{language === 'ta' ? '10 சாமங்களையும் விரி' : 'Expand All 10'}</span>
-              </>
-            )}
-          </button>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5">
+            {/* 1. Day Ruler (பகல் அரசு) */}
+            <div
+              onClick={() => {
+                if (dayRulerBird && onSelectBird) onSelectBird(dayRulerBird);
+              }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if ((e.key === 'Enter' || e.key === ' ') && dayRulerBird && onSelectBird) {
+                  onSelectBird(dayRulerBird);
+                }
+              }}
+              className={`p-3 rounded-xl border transition-all cursor-pointer relative select-none ${
+                selectedBird === dayRulerBird
+                  ? 'bg-amber-500/15 dark:bg-amber-500/20 border-amber-500 ring-2 ring-amber-500/30'
+                  : 'bg-amber-50/60 dark:bg-amber-950/20 border-amber-200/90 dark:border-amber-900/50 hover:border-amber-400'
+              }`}
+              title={language === 'ta' ? 'பகல் அரசு பட்சியைத் தேர்ந்தெடுக்க கிளிக் செய்க' : 'Click to select Day Ruler bird'}
+            >
+              <div className="flex items-start justify-between gap-1 mb-1.5">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-6 h-6 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center text-xs shadow-xs">
+                    <Sun className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase tracking-wider font-extrabold text-amber-800 dark:text-amber-400 block leading-tight">
+                      {language === 'ta' ? 'பகல் அரசு' : 'Day Ruler'}
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-none">
+                      {language === 'ta' ? 'சாமம் 1 - 5' : 'Jamas 1 - 5'}
+                    </span>
+                  </div>
+                </div>
+
+                {isDayRulerRunning && (
+                  <span className="text-[9px] font-black bg-emerald-500 text-white px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                    <span className="w-1 h-1 rounded-full bg-white animate-ping" />
+                    <span>{language === 'ta' ? 'நடப்பு' : 'Live'}</span>
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between gap-2 mt-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl drop-shadow-xs">
+                    {dayRulerBird ? BIRD_EMOJIS[dayRulerBird] : '🦅'}
+                  </span>
+                  <div>
+                    <div className="font-black text-sm sm:text-base text-slate-900 dark:text-white leading-tight">
+                      {dayRulerBird ? getBirdName(dayRulerBird) : '-'}
+                    </div>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                      {language === 'ta' ? '06:00 - 18:00 பகல்' : 'Day (06:00 - 18:00)'}
+                    </span>
+                  </div>
+                </div>
+
+                {selectedBird === dayRulerBird && (
+                  <span className="text-[10px] font-bold text-amber-800 dark:text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded-md self-end">
+                    {language === 'ta' ? 'உங்கள் பட்சி' : 'Your Bird'}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* 2. Night Ruler (இரவு அரசு) */}
+            <div
+              onClick={() => {
+                if (nightRulerBird && onSelectBird) onSelectBird(nightRulerBird);
+              }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if ((e.key === 'Enter' || e.key === ' ') && nightRulerBird && onSelectBird) {
+                  onSelectBird(nightRulerBird);
+                }
+              }}
+              className={`p-3 rounded-xl border transition-all cursor-pointer relative select-none ${
+                selectedBird === nightRulerBird
+                  ? 'bg-indigo-500/15 dark:bg-indigo-500/20 border-indigo-500 ring-2 ring-indigo-500/30'
+                  : 'bg-indigo-50/60 dark:bg-indigo-950/20 border-indigo-200/90 dark:border-indigo-900/50 hover:border-indigo-400'
+              }`}
+              title={language === 'ta' ? 'இரவு அரசு பட்சியைத் தேர்ந்தெடுக்க கிளிக் செய்க' : 'Click to select Night Ruler bird'}
+            >
+              <div className="flex items-start justify-between gap-1 mb-1.5">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs shadow-xs">
+                    <Moon className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase tracking-wider font-extrabold text-indigo-800 dark:text-indigo-400 block leading-tight">
+                      {language === 'ta' ? 'இரவு அரசு' : 'Night Ruler'}
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-none">
+                      {language === 'ta' ? 'சாமம் 6 - 10' : 'Jamas 6 - 10'}
+                    </span>
+                  </div>
+                </div>
+
+                {isNightRulerRunning && (
+                  <span className="text-[9px] font-black bg-emerald-500 text-white px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                    <span className="w-1 h-1 rounded-full bg-white animate-ping" />
+                    <span>{language === 'ta' ? 'நடப்பு' : 'Live'}</span>
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between gap-2 mt-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl drop-shadow-xs">
+                    {nightRulerBird ? BIRD_EMOJIS[nightRulerBird] : '🐦'}
+                  </span>
+                  <div>
+                    <div className="font-black text-sm sm:text-base text-slate-900 dark:text-white leading-tight">
+                      {nightRulerBird ? getBirdName(nightRulerBird) : '-'}
+                    </div>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                      {language === 'ta' ? '18:00 - 06:00 இரவு' : 'Night (18:00 - 06:00)'}
+                    </span>
+                  </div>
+                </div>
+
+                {selectedBird === nightRulerBird && (
+                  <span className="text-[10px] font-bold text-indigo-800 dark:text-indigo-300 bg-indigo-500/20 px-1.5 py-0.5 rounded-md self-end">
+                    {language === 'ta' ? 'உங்கள் பட்சி' : 'Your Bird'}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* 3. Dying Bird (சாவுப் பட்சி / மரண பட்சி) */}
+            <div
+              onClick={() => {
+                if (dyingBird && onSelectBird) onSelectBird(dyingBird);
+              }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if ((e.key === 'Enter' || e.key === ' ') && dyingBird && onSelectBird) {
+                  onSelectBird(dyingBird);
+                }
+              }}
+              className={`p-3 rounded-xl border transition-all cursor-pointer relative select-none ${
+                selectedBird === dyingBird
+                  ? 'bg-rose-500/15 dark:bg-rose-500/25 border-rose-500 ring-2 ring-rose-500/30'
+                  : 'bg-rose-50/60 dark:bg-rose-950/20 border-rose-200/90 dark:border-rose-900/50 hover:border-rose-400'
+              }`}
+              title={language === 'ta' ? 'சாவுப் பட்சியைப் பார்க்க கிளிக் செய்க' : 'Click to view Dying Bird info'}
+            >
+              <div className="flex items-start justify-between gap-1 mb-1.5">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-6 h-6 rounded-lg bg-rose-600 text-white flex items-center justify-center text-xs shadow-xs">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase tracking-wider font-extrabold text-rose-800 dark:text-rose-400 block leading-tight">
+                      {language === 'ta' ? 'சாவுப் பட்சி' : 'Dying Bird'}
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-none">
+                      {language === 'ta' ? 'முழு நாள் (10 சாமம்)' : 'All 10 Jamas'}
+                    </span>
+                  </div>
+                </div>
+
+                <span className="text-[9px] font-black bg-rose-600/20 border border-rose-500/40 text-rose-800 dark:text-rose-300 px-1.5 py-0.5 rounded-full">
+                  {language === 'ta' ? 'மரண பட்சி' : 'Avoid Work'}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between gap-2 mt-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl drop-shadow-xs">
+                    {dyingBird ? BIRD_EMOJIS[dyingBird] : '🦉'}
+                  </span>
+                  <div>
+                    <div className="font-black text-sm sm:text-base text-slate-900 dark:text-white leading-tight">
+                      {dyingBird ? getBirdName(dyingBird) : '-'}
+                    </div>
+                    <span className="text-[10px] text-rose-700 dark:text-rose-400 font-semibold">
+                      {language === 'ta' ? 'சுபகாரியம் தவிர்' : 'Inauspicious today'}
+                    </span>
+                  </div>
+                </div>
+
+                {selectedBird === dyingBird && (
+                  <span className="text-[10px] font-black text-rose-800 dark:text-rose-200 bg-rose-500/25 border border-rose-500/40 px-1.5 py-0.5 rounded-md self-end animate-pulse">
+                    🚨 {language === 'ta' ? 'உங்கள் பட்சி!' : 'Your Bird!'}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

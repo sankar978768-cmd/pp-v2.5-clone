@@ -214,9 +214,14 @@ export const RealTimeCalendarModal: React.FC<RealTimeCalendarModalProps> = ({
               <CalendarIcon className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                <span>{t('calendarTitle')}</span>
-              </h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                  <span>{t('calendarTitle')}</span>
+                </h2>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30">
+                  {language === 'ta' ? 'ஆங்கில நாட்காட்டி (Default)' : 'English Calendar (Default)'}
+                </span>
+              </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 {t('calendarSubtitle')}
               </p>

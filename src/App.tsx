@@ -484,10 +484,19 @@ export default function App() {
         timeDisplayMode={timeDisplayMode}
         onToggleTimeDisplayMode={handleToggleTimeDisplayMode}
         tzAbbreviation={tzAbbreviation}
+        dayMeta={dayMeta}
+        runningJamaNumber={runningJamaNumber}
+        onOpenCalendar={() => {
+          if (activeTab !== 'calendar') {
+            handleSelectTab('calendar');
+          } else {
+            setIsCalendarModalOpen(true);
+          }
+        }}
       />
 
       {/* Main View Area with Dedicated Independent Screen Components */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-3 sm:px-5 lg:px-6 pt-16 sm:pt-18 pb-24 sm:pb-22">
+      <main className="flex-1 max-w-4xl w-full mx-auto px-3 sm:px-5 lg:px-6 pt-22 sm:pt-24 pb-24 sm:pb-22">
         {/* Screen 1: 10 Jamas Screen */}
         {activeTab === 'jamas' && (
           <JamasScreen
@@ -511,6 +520,8 @@ export default function App() {
             }}
             onNavigateToTab={(tab) => handleSelectTab(tab)}
             selectedCalendarDate={selectedCalendarDate}
+            dayMeta={dayMeta}
+            onSelectBird={(id) => setSelectedBird(id)}
           />
         )}
 

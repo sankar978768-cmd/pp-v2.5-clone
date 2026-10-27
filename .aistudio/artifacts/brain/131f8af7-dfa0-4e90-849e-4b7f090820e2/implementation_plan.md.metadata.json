@@ -1,6 +1,6 @@
 {
-  "summary":  "Implementation plan for restructuring the Pancha Pakshi app so the main dashboard exclusively displays the 10 Jama calculations, with all other controls (Date/Paksha, Location/Solar, Bird Selection, Analytics) packaged into a categorized Android-optimized side menu.",
-  "updatedAt":  "2026-10-21T11:42:41.260044801Z",
+  "summary":  "Implementation plan for displaying Day Ruler, Night Ruler, and Dying Bird in the Top Bar and Top Status strip of JamasScreen with high visual clarity, Tamil and English labels, and bird icons.",
+  "updatedAt":  "2026-10-27T12:28:16.221822786Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

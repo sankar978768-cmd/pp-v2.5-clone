@@ -312,7 +312,7 @@ export const TamilMonthCalendarView: React.FC<TamilMonthCalendarViewProps> = ({
                     type="button"
                     onClick={() => handleSelectDay(dayInfo)}
                     id={`tamil-date-${dayInfo.tamilMonthIndex}-${dayInfo.tamilDate}`}
-                    className={`min-h-[56px] sm:min-h-[68px] p-1 sm:p-1.5 rounded-xl border flex flex-col justify-between items-center text-center transition-all cursor-pointer relative active:scale-95 ${
+                    className={`min-h-[56px] sm:min-h-[68px] p-1 sm:p-1.5 rounded-xl border flex flex-col justify-between items-center text-center transition-all cursor-pointer relative active:scale-95 touch-manipulation select-none ${
                       isThaniya
                         ? isSelected
                           ? 'bg-rose-500 text-white border-rose-600 ring-2 ring-rose-500 shadow-md font-bold z-10'

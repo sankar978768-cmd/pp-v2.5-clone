@@ -1,11 +1,13 @@
 import React from 'react';
-import { BirdId, PakshaType, DayOfWeek } from '../types';
+import { BirdId, PakshaType, DayOfWeek, DayCalculationMeta } from '../types';
 import { BIRD_EMOJIS } from './BirdSelectModal';
+import { PANCHA_PAKSHI_DAYS } from '../data/panchaPakshiRegistry';
 import { useLanguage } from '../context/LanguageContext';
 import {
   Menu,
   Sun,
   Moon,
+  CalendarDays,
 } from 'lucide-react';
 
 export interface FixedTopHeaderProps {
@@ -22,10 +24,15 @@ export interface FixedTopHeaderProps {
   timeDisplayMode: 'local' | 'ist';
   onToggleTimeDisplayMode: (mode: 'local' | 'ist') => void;
   tzAbbreviation?: string;
+  dayMeta?: DayCalculationMeta;
+  runningJamaNumber?: number;
+  onOpenCalendar?: () => void;
 }
 
 export const FixedTopHeader: React.FC<FixedTopHeaderProps> = ({
   onOpenSideMenu,
+  selectedPaksha,
+  selectedDay,
   selectedBird,
   theme,
   setTheme,
@@ -34,8 +41,25 @@ export const FixedTopHeader: React.FC<FixedTopHeaderProps> = ({
   timeDisplayMode,
   onToggleTimeDisplayMode,
   tzAbbreviation = 'Local',
+  dayMeta,
+  runningJamaNumber = 1,
+  onOpenCalendar,
 }) => {
   const { getBirdName } = useLanguage();
+
+  const currentDayMeta =
+    dayMeta ||
+    PANCHA_PAKSHI_DAYS.find((d) => d.id === `${selectedPaksha}_${selectedDay}`) ||
+    PANCHA_PAKSHI_DAYS[0];
+
+  const dayRulerBird = currentDayMeta?.dayRulingBird;
+  const nightRulerBird = currentDayMeta?.nightRulingBird;
+  const dyingBird =
+    currentDayMeta?.dyingBird ||
+    currentDayMeta?.dayDyingBird ||
+    currentDayMeta?.nightDyingBird;
+
+  const isDayRunning = runningJamaNumber >= 1 && runningJamaNumber <= 5;
 
   return (
     <header
@@ -120,6 +144,29 @@ export const FixedTopHeader: React.FC<FixedTopHeaderProps> = ({
               </button>
             </div>
 
+            {/* Panchang Grid Icon (English Calendar Default) - Placed next to IST switcher */}
+            <button
+              type="button"
+              onClick={onOpenCalendar}
+              id="header-panchang-grid-btn"
+              className="min-h-[44px] min-w-[44px] px-2.5 rounded-xl bg-[#FAF6EE] dark:bg-slate-900 hover:bg-amber-500/15 dark:hover:bg-amber-500/20 text-slate-700 dark:text-slate-200 hover:text-amber-800 dark:hover:text-amber-300 border border-[#E8DFCE] dark:border-slate-800 hover:border-amber-400/50 transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 shadow-2xs touch-manipulation select-none"
+              title={
+                language === 'ta'
+                  ? 'பஞ்சாங்கம் நாட்காட்டி கட்டம் (English Calendar Default)'
+                  : 'Panchang Grid (English Calendar Default)'
+              }
+              aria-label={
+                language === 'ta'
+                  ? 'பஞ்சாங்கம் நாட்காட்டி கட்டம்'
+                  : 'Panchang Grid'
+              }
+            >
+              <CalendarDays className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span className="hidden min-[600px]:inline text-xs font-bold text-slate-800 dark:text-slate-200">
+                {language === 'ta' ? 'பஞ்சாங்கம்' : 'Panchang'}
+              </span>
+            </button>
+
             {/* Theme Toggle Button */}
             <button
               type="button"
@@ -144,6 +191,70 @@ export const FixedTopHeader: React.FC<FixedTopHeaderProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Sticky Top Bar Rulers Strip (Day Ruler, Night Ruler, Dying Bird) */}
+        {currentDayMeta && (
+          <div
+            id="top-bar-rulers-strip"
+            className="flex items-center justify-between gap-1.5 sm:gap-2 pt-1.5 mt-1 border-t border-[#E8DFCE]/70 dark:border-slate-800/70 overflow-x-auto no-scrollbar text-[11px] sm:text-xs"
+          >
+            {/* Day Ruler Chip */}
+            <div
+              className={`flex items-center gap-1 shrink-0 px-2 py-0.5 rounded-lg border transition-all ${
+                isDayRunning
+                  ? 'bg-amber-500/15 text-amber-950 dark:text-amber-200 border-amber-500/40 font-bold'
+                  : 'bg-amber-500/5 text-amber-900/70 dark:text-amber-300/70 border-amber-500/20'
+              }`}
+              title={language === 'ta' ? 'பகல் அரசு பட்சி (சாமம் 1-5)' : 'Day Ruler Bird (Jamas 1-5)'}
+            >
+              <span className="text-xs">☀️</span>
+              <span className="text-[10px] sm:text-[11px] font-semibold opacity-75">
+                {language === 'ta' ? 'பகல்:' : 'Day:'}
+              </span>
+              <span className="font-extrabold flex items-center gap-0.5">
+                {dayRulerBird && BIRD_EMOJIS[dayRulerBird]} {dayRulerBird ? getBirdName(dayRulerBird) : '-'}
+              </span>
+              {isDayRunning && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse ml-0.5" />
+              )}
+            </div>
+
+            {/* Night Ruler Chip */}
+            <div
+              className={`flex items-center gap-1 shrink-0 px-2 py-0.5 rounded-lg border transition-all ${
+                !isDayRunning
+                  ? 'bg-indigo-500/15 text-indigo-950 dark:text-indigo-200 border-indigo-500/40 font-bold'
+                  : 'bg-indigo-500/5 text-indigo-900/70 dark:text-indigo-300/70 border-indigo-500/20'
+              }`}
+              title={language === 'ta' ? 'இரவு அரசு பட்சி (சாமம் 6-10)' : 'Night Ruler Bird (Jamas 6-10)'}
+            >
+              <span className="text-xs">🌙</span>
+              <span className="text-[10px] sm:text-[11px] font-semibold opacity-75">
+                {language === 'ta' ? 'இரவு:' : 'Night:'}
+              </span>
+              <span className="font-extrabold flex items-center gap-0.5">
+                {nightRulerBird && BIRD_EMOJIS[nightRulerBird]} {nightRulerBird ? getBirdName(nightRulerBird) : '-'}
+              </span>
+              {!isDayRunning && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse ml-0.5" />
+              )}
+            </div>
+
+            {/* Dying Bird Chip */}
+            <div
+              className="flex items-center gap-1 shrink-0 px-2 py-0.5 rounded-lg bg-rose-500/10 text-rose-950 dark:text-rose-200 border border-rose-500/30"
+              title={language === 'ta' ? 'சாவுப் பட்சி / மரண பட்சி (சுபகாரியம் தவிர்)' : 'Dying Bird (Inauspicious)'}
+            >
+              <span className="text-xs">⚠️</span>
+              <span className="text-[10px] sm:text-[11px] font-semibold opacity-75">
+                {language === 'ta' ? 'சாவு:' : 'Dying:'}
+              </span>
+              <span className="font-extrabold flex items-center gap-0.5 text-rose-700 dark:text-rose-300">
+                {dyingBird && BIRD_EMOJIS[dyingBird]} {dyingBird ? getBirdName(dyingBird) : '-'}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );
