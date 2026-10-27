@@ -1,0 +1,6 @@
+{
+  "summary":  "Implementation plan for restructuring the Pancha Pakshi app so the main dashboard exclusively displays the 10 Jama calculations, with all other controls (Date/Paksha, Location/Solar, Bird Selection, Analytics) packaged into a categorized Android-optimized side menu.",
+  "updatedAt":  "2026-10-21T11:42:41.260044801Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

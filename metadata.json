@@ -1,0 +1,10 @@
+{
+  "name": "Pancha Pakshi v2.5",
+  "description": "space reduce",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
